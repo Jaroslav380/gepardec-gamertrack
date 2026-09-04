@@ -13,6 +13,11 @@ public record PlayerGameStatsRestDto(String userToken,
                                      int longestWinStreak,
                                      long excludedMatches) {
 
+    /**
+     * Creates a REST DTO from the specified player game statistics.
+     *
+     * @param stats the player game statistics to map
+     */
     public PlayerGameStatsRestDto(PlayerGameStats stats) {
         this(stats.userToken(), stats.gameToken(), stats.matchesPlayed(), stats.wins(),
                 stats.draws(), stats.losses(), stats.winRate(),

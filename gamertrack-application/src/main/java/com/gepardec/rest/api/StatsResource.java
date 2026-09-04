@@ -30,7 +30,14 @@ public interface StatsResource {
     int DEFAULT_FORM_RESULTS = 10;
     int MAX_FORM_RESULTS = 50;
 
-    @Operation(summary = "Gets aggregated statistics of a player for one game",
+    /**
+                                 * Retrieves aggregated statistics for a player in a game.
+                                 *
+                                 * @param userToken the player's token
+                                 * @param gameToken the game's token
+                                 * @return the HTTP response containing the player's game statistics
+                                 */
+                                @Operation(summary = "Gets aggregated statistics of a player for one game",
             description = "Returns matches played, wins, draws, losses, win rate, current streak and "
                     + "longest win streak, computed from the stored matches of the given game. Matches "
                     + "without a stored result are excluded and reported via excludedMatches. A player "
@@ -47,7 +54,15 @@ public interface StatsResource {
     Response getPlayerGameStats(@PathParam("userToken") String userToken,
                                 @PathParam("gameToken") String gameToken);
 
-    @Operation(summary = "Gets the recent form of a player for one game",
+    /**
+                            * Retrieves a player's recent results for a game, ordered from newest to oldest.
+                            *
+                            * @param userToken the player's user token
+                            * @param gameToken the game token
+                            * @param limit the maximum number of results to include; values above 50 are capped
+                            * @return an HTTP response containing the player's recent form
+                            */
+                           @Operation(summary = "Gets the recent form of a player for one game",
             description = "Returns the results of the player's last matches of the given game, newest "
                     + "first. The number of results can be limited with the limit query parameter "
                     + "(default " + DEFAULT_FORM_RESULTS + ", at most " + MAX_FORM_RESULTS + "; larger "
@@ -67,7 +82,15 @@ public interface StatsResource {
                            @PathParam("gameToken") String gameToken,
                            @QueryParam("limit") @DefaultValue("" + DEFAULT_FORM_RESULTS) int limit);
 
-    @Operation(summary = "Gets the head-to-head record of two players for one game",
+    /**
+                            * Determines the mutual record between two players for a game.
+                            *
+                            * @param firstUserToken the token identifying the first player
+                            * @param secondUserToken the token identifying the second player
+                            * @param gameToken the token identifying the game
+                            * @return the HTTP response containing the head-to-head record
+                            */
+                           @Operation(summary = "Gets the head-to-head record of two players for one game",
             description = "Returns the mutual record of the two players based only on stored matches of "
                     + "the given game both players participated in. In multiplayer matches the better "
                     + "placement counts as the head-to-head win, an equal placement counts as a draw. "
