@@ -19,17 +19,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
  * Computes read-only player statistics from stored matches.
  * <p>
- * A match result is derived from the persisted order of the match's user list
- * (first place first, as already assumed by the Elo calculation). A match only
- * counts for statistics if a result can be derived from it, meaning it has at
- * least two participants; all other matches are excluded and reported via the
- * excludedMatches count.
+ * A match result is derived from the persisted placement at the same index as
+ * each participant. Equal placements represent a draw. A match only counts for
+ * statistics if it has at least two participants and a placement for each of
+ * them; all other matches are excluded and reported via excludedMatches.
  */
 @ApplicationScoped
 @Transactional
@@ -90,7 +90,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                 .formatted(firstUserToken, secondUserToken, gameToken));
 
         List<Match> mutualMatches = findMatchesNewestFirst(firstUserToken, gameToken).stream()
-                .filter(match -> placementOf(match, secondUserToken).isPresent())
+                .filter(match -> participantIndexOf(match, secondUserToken).isPresent())
                 .toList();
 
         List<PlacementPair> placements = mutualMatches.stream()
@@ -153,18 +153,40 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     private static boolean hasStoredResult(Match match) {
-        return match.getUsers() != null && match.getUsers().size() >= 2;
+        return match.getUsers() != null
+                && match.getUsers().size() >= 2
+                && match.getPlacements() != null
+                && match.getPlacements().size() == match.getUsers().size()
+                && match.getPlacements().stream().allMatch(Objects::nonNull);
     }
 
     private static Optional<MatchOutcome> outcomeFor(Match match, String userToken) {
-        OptionalInt placement = placementOf(match, userToken);
-        if (placement.isEmpty()) {
+        OptionalInt participantIndex = participantIndexOf(match, userToken);
+        if (participantIndex.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(placement.getAsInt() == 0 ? MatchOutcome.WIN : MatchOutcome.LOSS);
+
+        int placement = match.getPlacements().get(participantIndex.getAsInt());
+        int bestPlacement = match.getPlacements().stream().mapToInt(Integer::intValue).min().orElseThrow();
+        if (placement != bestPlacement) {
+            return Optional.of(MatchOutcome.LOSS);
+        }
+
+        long playersAtBestPlacement = match.getPlacements().stream()
+                .filter(value -> value == bestPlacement)
+                .count();
+        return Optional.of(playersAtBestPlacement > 1 ? MatchOutcome.DRAW : MatchOutcome.WIN);
     }
 
     private static OptionalInt placementOf(Match match, String userToken) {
+        OptionalInt participantIndex = participantIndexOf(match, userToken);
+        if (participantIndex.isEmpty() || !hasStoredResult(match)) {
+            return OptionalInt.empty();
+        }
+        return OptionalInt.of(match.getPlacements().get(participantIndex.getAsInt()));
+    }
+
+    private static OptionalInt participantIndexOf(Match match, String userToken) {
         List<User> users = match.getUsers();
         if (users == null) {
             return OptionalInt.empty();

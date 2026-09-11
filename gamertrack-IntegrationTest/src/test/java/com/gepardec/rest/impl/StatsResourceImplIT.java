@@ -56,7 +56,7 @@ public class StatsResourceImplIT {
 
     @BeforeAll
     public static void setup() {
-        enableLoggingOfRequestAndResponseIfValidationFails(LogDetail.ALL);
+        enableLoggingOfRequestAndResponseIfValidationFails(LogDetail.STATUS);
     }
 
     @BeforeEach
@@ -150,6 +150,39 @@ public class StatsResourceImplIT {
 
         // JSON numbers are parsed as float by RestAssured, so compare with float precision
         assertEquals(6.0 / 9.0, statsJson.getDouble("winRate"), 1e-6);
+    }
+
+    @Test
+    void ensurePersistedDrawIsReportedWithoutChangingWinsAndLosses() {
+        GameRestDto game = createGame();
+        UserRestDto playerA = createUser();
+        UserRestDto playerB = createUser();
+
+        createMatch(game, playerA, playerB);
+        createMatch(game, playerB, playerA);
+        createMatch(game, List.of(0, 0), playerA, playerB);
+
+        authorized()
+                .pathParam("userToken", playerA.token())
+                .pathParam("gameToken", game.token())
+                .get(STATS_PATH + "/players/{userToken}/games/{gameToken}")
+                .then()
+                .statusCode(Status.OK.getStatusCode())
+                .body("matchesPlayed", equalTo(3))
+                .body("wins", equalTo(1))
+                .body("draws", equalTo(1))
+                .body("losses", equalTo(1));
+
+        authorized()
+                .queryParam("firstUserToken", playerA.token())
+                .queryParam("secondUserToken", playerB.token())
+                .queryParam("gameToken", game.token())
+                .get(HEAD_TO_HEAD_PATH)
+                .then()
+                .statusCode(Status.OK.getStatusCode())
+                .body("firstUserWins", equalTo(1))
+                .body("secondUserWins", equalTo(1))
+                .body("draws", equalTo(1));
     }
 
     @Test
@@ -485,12 +518,18 @@ public class StatsResourceImplIT {
     }
 
     public MatchRestDto createMatch(GameRestDto gameRestDto, UserRestDto... usersInPlacementOrder) {
+        return createMatch(gameRestDto, null, usersInPlacementOrder);
+    }
+
+    public MatchRestDto createMatch(GameRestDto gameRestDto, List<Integer> placements,
+                                    UserRestDto... usersInPlacementOrder) {
         CreateMatchCommand createMatchCommand = new CreateMatchCommand(
                 new Game(null, gameRestDto.token(), gameRestDto.name(), gameRestDto.rules()),
                 Arrays.stream(usersInPlacementOrder)
                         .map(user -> new User(null, user.firstname(), user.lastname(),
                                 user.deactivated(), user.token()))
-                        .toList());
+                        .toList(),
+                placements);
 
         return with()
                 .headers(

@@ -8,9 +8,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 public record MatchRestDto(@NotBlank String token, @NotNull String createdOn, String updatedOn, @NotNull GameRestDto game,
-                           @NotNull List<UserRestDto> users) {
+                           @NotNull List<UserRestDto> users, @NotNull List<Integer> placements) {
+
+    public MatchRestDto(String token, String createdOn, String updatedOn, GameRestDto game,
+                        List<UserRestDto> users) {
+        this(token, createdOn, updatedOn, game, users,
+                IntStream.range(0, users.size()).boxed().toList());
+    }
 
     public MatchRestDto(Match match) {
         this(match.getToken(),
@@ -21,7 +28,7 @@ public record MatchRestDto(@NotBlank String token, @NotNull String createdOn, St
                         match.getUsers().stream()
                                 .map(UserRestDto::new)
                                 .toList()
-                ));
+                ), match.getPlacements());
     }
 
     @Override
@@ -31,12 +38,13 @@ public record MatchRestDto(@NotBlank String token, @NotNull String createdOn, St
         }
         MatchRestDto that = (MatchRestDto) o;
         return Objects.equals(game, that.game) && Objects.equals(token, that.token)
-                && Objects.equals(users, that.users) && Objects.equals(createdOn, that.createdOn) && Objects.equals(updatedOn, that.updatedOn);
+                && Objects.equals(users, that.users) && Objects.equals(placements, that.placements)
+                && Objects.equals(createdOn, that.createdOn) && Objects.equals(updatedOn, that.updatedOn);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(token, game, users,createdOn, updatedOn);
+        return Objects.hash(token, game, users, placements, createdOn, updatedOn);
     }
 
     @Override
@@ -45,6 +53,7 @@ public record MatchRestDto(@NotBlank String token, @NotNull String createdOn, St
                 "token='" + token + '\'' +
                 ", game=" + game +
                 ", users=" + users +
+                ", placements=" + placements +
                 '}';
     }
 }

@@ -5,6 +5,10 @@ import com.gepardec.model.User;
 
 import java.util.List;
 
-public record UpdateMatchCommand(Game game, List<User> users) {
+public record UpdateMatchCommand(Game game, List<User> users, List<Integer> placements) {
+
+    public UpdateMatchCommand(Game game, List<User> users) {
+        this(game, users, null);
+    }
 
 }

@@ -57,6 +57,12 @@ class StatisticsServiceImplTest {
         return TestFixtures.match(id, game, List.of(usersInPlacementOrder));
     }
 
+    private Match matchWithPlacements(long id, List<Integer> placements, User... users) {
+        Match match = TestFixtures.match(id, game, List.of(users));
+        match.setPlacements(placements);
+        return match;
+    }
+
     private void mockExistingUserAndGame(User... users) {
         for (User user : users) {
             when(userRepository.findUserByToken(user.getToken())).thenReturn(Optional.of(user));
@@ -112,6 +118,29 @@ class StatisticsServiceImplTest {
         assertEquals(1, stats.draws());
         assertEquals(3, stats.losses());
         assertEquals(0.6, stats.winRate(), 1e-9);
+    }
+
+    @Test
+    void ensureStoredPlacementsProduceDrawWithoutChangingWinsAndLosses() {
+        List<Match> matchesNewestFirst = List.of(
+                matchWithPlacements(3L, List.of(0, 0), userA, userB),
+                matchWithPlacements(2L, List.of(0, 1), userA, userB),
+                matchWithPlacements(1L, List.of(0, 1), userB, userA));
+
+        mockExistingUserAndGame(userA, userB);
+        mockMatchesNewestFirst(userA.getToken(), matchesNewestFirst);
+
+        PlayerGameStats stats = statisticsService
+                .getPlayerGameStats(userA.getToken(), game.getToken()).orElseThrow();
+        HeadToHead headToHead = statisticsService
+                .getHeadToHead(userA.getToken(), userB.getToken(), game.getToken()).orElseThrow();
+
+        assertEquals(1, stats.wins());
+        assertEquals(1, stats.draws());
+        assertEquals(1, stats.losses());
+        assertEquals(1, headToHead.firstUserWins());
+        assertEquals(1, headToHead.draws());
+        assertEquals(1, headToHead.secondUserWins());
     }
 
     @Test
@@ -220,20 +249,6 @@ class StatisticsServiceImplTest {
         assertEquals(1, headToHead.firstUserWins());
         assertEquals(0, headToHead.secondUserWins());
         assertEquals(0, headToHead.draws());
-    }
-
-    @Test
-    void ensureSharedPlacementCountsAsDraw() {
-        HeadToHead headToHead = statisticsService.buildHeadToHead(
-                game.getToken(), userA.getToken(), userB.getToken(),
-                List.of(new StatisticsServiceImpl.PlacementPair(1, 1),
-                        new StatisticsServiceImpl.PlacementPair(0, 2)),
-                0);
-
-        assertEquals(2, headToHead.matchesPlayed());
-        assertEquals(1, headToHead.firstUserWins());
-        assertEquals(0, headToHead.secondUserWins());
-        assertEquals(1, headToHead.draws());
     }
 
     @Test

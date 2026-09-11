@@ -34,7 +34,8 @@ public class MatchMapper {
     return new Match(matchEntity.getId(), matchEntity.getToken(),
             matchEntity.getCreatedOn(), matchEntity.getUpdatedOn(),
             gameMapper.gameEntityToGameModel(matchEntity.getGame()),
-        matchEntity.getUsers().stream().map(userMapper::userEntityToUserModel).toList());
+        matchEntity.getUsers().stream().map(userMapper::userEntityToUserModel).toList(),
+        matchEntity.getPlacements());
   }
 
   public MatchEntity matchModelToMatchEntity(Match match) {
@@ -44,7 +45,7 @@ public class MatchMapper {
             user.isDeactivated(), user.getToken())));
 
     return new MatchEntity(match.getId(), match.getToken(),
-        gameMapper.gameModelToGameEntity(match.getGame()), users);
+        gameMapper.gameModelToGameEntity(match.getGame()), users, match.getPlacements());
   }
 
   public MatchEntity matchModelToMatchEntityWithReference(Match match, MatchEntity matchEntity) {
@@ -56,6 +57,7 @@ public class MatchMapper {
             .map(u -> entityManager.getReference(UserEntity.class, u.getId()))
             .collect(Collectors.toList()));
     matchEntity.setToken(match.getToken());
+    matchEntity.setPlacements(match.getPlacements());
     return matchEntity;
   }
 
