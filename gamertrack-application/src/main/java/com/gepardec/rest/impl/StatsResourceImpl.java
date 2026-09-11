@@ -21,6 +21,13 @@ public class StatsResourceImpl implements StatsResource {
     @Inject
     private StatisticsService statisticsService;
 
+    /**
+     * Retrieves a player's statistics for a game.
+     *
+     * @param userToken the token identifying the player
+     * @param gameToken the token identifying the game
+     * @return a successful response containing the player's statistics, or a 404 response if the user or game is not found
+     */
     @Override
     public Response getPlayerGameStats(String userToken, String gameToken) {
         logger.info("Getting stats for userToken: %s and gameToken: %s".formatted(userToken, gameToken));
@@ -32,6 +39,16 @@ public class StatsResourceImpl implements StatsResource {
                 .build();
     }
 
+    /**
+     * Retrieves a player's recent form for a game.
+     *
+     * @param userToken the player's token
+     * @param gameToken the game's token
+     * @param limit the maximum number of form results to include
+     * @return an HTTP 200 response with the player's form, an HTTP 400 response
+     *         when the limit is not positive, or an HTTP 404 response when the
+     *         user or game is not found
+     */
     @Override
     public Response getPlayerForm(String userToken, String gameToken, int limit) {
         logger.info("Getting form for userToken: %s and gameToken: %s with limit: %s"
@@ -50,6 +67,14 @@ public class StatsResourceImpl implements StatsResource {
                 .build();
     }
 
+    /**
+     * Retrieves head-to-head statistics for two different users in a game.
+     *
+     * @param firstUserToken  the token identifying the first user
+     * @param secondUserToken the token identifying the second user
+     * @param gameToken       the token identifying the game
+     * @return an HTTP 200 response containing the statistics, or an HTTP 400 or 404 response when the request is invalid or data is unavailable
+     */
     @Override
     public Response getHeadToHead(String firstUserToken, String secondUserToken, String gameToken) {
         logger.info("Getting head-to-head for userTokens: %s and %s and gameToken: %s"
@@ -77,6 +102,11 @@ public class StatsResourceImpl implements StatsResource {
                 .build();
     }
 
+    /**
+     * Creates a not-found response for an unknown user or game.
+     *
+     * @return a response builder configured with HTTP status 404 and an error entity
+     */
     private static Response.ResponseBuilder unknownUserOrGame() {
         return Response.status(Status.NOT_FOUND)
                 .entity(new ErrorRestDto("User or game not found"));

@@ -59,6 +59,9 @@ public class StatsResourceImplIT {
         enableLoggingOfRequestAndResponseIfValidationFails(LogDetail.STATUS);
     }
 
+    /**
+     * Configures the API base path and establishes the authenticated request token.
+     */
     @BeforeEach
     public void login() {
         basePath = "/gepardec-gamertrack/api/v1";
@@ -77,6 +80,9 @@ public class StatsResourceImplIT {
         bearerToken = authHeader.replace("Bearer ", "");
     }
 
+    /**
+     * Deletes the games and users created during the test and clears their tracked tokens.
+     */
     @AfterEach
     public void tearDown() {
         for (String token : usesGameTokens) {
@@ -116,6 +122,9 @@ public class StatsResourceImplIT {
         reset();
     }
 
+    /**
+     * Verifies that player statistics accurately reflect a known match history.
+     */
     @Test
     void ensureStatsForKnownMatchHistoryReturnExactNumbers() {
         GameRestDto game = createGame();
@@ -460,6 +469,11 @@ public class StatsResourceImplIT {
                 .statusCode(Status.UNAUTHORIZED.getStatusCode());
     }
 
+    /**
+     * Creates a request specification authenticated with the current bearer token.
+     *
+     * @return an authenticated request specification accepting JSON responses
+     */
     private io.restassured.specification.RequestSpecification authorized() {
         return given()
                 .headers(
@@ -470,6 +484,11 @@ public class StatsResourceImplIT {
                 .when();
     }
 
+    /**
+     * Creates a user through the authenticated user API and records its token for cleanup.
+     *
+     * @return the newly created user
+     */
     public UserRestDto createUser() {
         UserRestDto userRestDto =
                 with()
@@ -493,6 +512,11 @@ public class StatsResourceImplIT {
         return userRestDto;
     }
 
+    /**
+     * Creates a game through the authenticated game API and tracks its token for cleanup.
+     *
+     * @return the created game
+     */
     public GameRestDto createGame() {
         GameRestDto gameRestDto = with()
                 .headers(
@@ -517,6 +541,13 @@ public class StatsResourceImplIT {
         return gameRestDto;
     }
 
+    /**
+     * Creates a match for the specified game and players.
+     *
+     * @param gameRestDto             the game in which the match is played
+     * @param usersInPlacementOrder   the players ordered by their placement in the match
+     * @return                        the created match
+     */
     public MatchRestDto createMatch(GameRestDto gameRestDto, UserRestDto... usersInPlacementOrder) {
         return createMatch(gameRestDto, null, usersInPlacementOrder);
     }

@@ -11,6 +11,11 @@ public record HeadToHeadRestDto(String gameToken,
                                 long draws,
                                 long excludedMatches) {
 
+    /**
+     * Creates a REST DTO from head-to-head match statistics.
+     *
+     * @param headToHead the head-to-head statistics to copy
+     */
     public HeadToHeadRestDto(HeadToHead headToHead) {
         this(headToHead.gameToken(), headToHead.firstUserToken(), headToHead.secondUserToken(),
                 headToHead.matchesPlayed(), headToHead.firstUserWins(), headToHead.secondUserWins(),

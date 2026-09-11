@@ -10,6 +10,11 @@ public record PlayerFormRestDto(String userToken,
                                 List<String> results,
                                 long excludedMatches) {
 
+    /**
+     * Creates a REST representation from a player form.
+     *
+     * @param form the player form to convert
+     */
     public PlayerFormRestDto(PlayerForm form) {
         this(form.userToken(), form.gameToken(),
                 form.results().stream().map(MatchOutcome::name).toList(),
