@@ -1,0 +1,199 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: "de-DE"
+
+knowledge_base:
+  jira:
+    usage: "enabled"
+    project_keys:
+      - "LAKWYC"
+
+chat:
+  integrations:
+    jira:
+      usage: "enabled"
+
+reviews:
+  profile: "assertive"
+
+  # CodeRabbit soll explizit prüfen, ob ein verlinktes Issue
+  # durch den PR tatsächlich umgesetzt wird.
+  assess_linked_issues: true
+
+  pre_merge_checks:
+    # Built-in CodeRabbit check:
+    # Prüft, ob der PR das verlinkte Issue adressiert
+    # und ob Scope-Abweichungen vorhanden sind.
+    issue_assessment:
+      mode: "error"
+
+    # Nur angeforderte Reviewer dürfen einen fehlgeschlagenen
+    # Pre-Merge-Check überschreiben.
+    override_requested_reviewers_only: true
+
+    custom_checks:
+      - name: "Jira Acceptance Criteria"
+        mode: "error"
+        instructions: |
+          Validate this pull request against the linked Jira issue.
+
+          Jira is the source of truth for functional requirements.
+
+          Only evaluate Jira issues from project LAKWYC.
+
+          The PR must reference a LAKWYC Jira issue. Prefer an explicitly
+          linked Jira issue in the pull request description.
+
+          Read the Jira issue title, description and all available
+          acceptance criteria before evaluating the implementation.
+
+          Evaluate EVERY acceptance criterion individually against:
+
+          - the pull request changes
+          - relevant existing repository code
+          - unit tests
+          - integration tests
+          - configuration
+          - API definitions and OpenAPI specifications when applicable
+
+          For every acceptance criterion classify it as exactly one of:
+
+          - PASS
+          - PARTIAL
+          - FAIL
+          - NOT VERIFIABLE
+
+          PASS:
+          Use only when concrete repository evidence clearly proves that
+          the acceptance criterion is implemented.
+
+          PARTIAL:
+          Use when the functionality is only partially implemented or
+          required tests/evidence are incomplete.
+
+          FAIL:
+          Use when required functionality is missing, incorrect or
+          contradicts the Jira requirement.
+
+          NOT VERIFIABLE:
+          Use when the requirement cannot be verified from the repository
+          or available external context.
+
+          Never mark an acceptance criterion PASS solely because the
+          pull request description claims it is implemented.
+
+          For PASS, PARTIAL and FAIL provide concrete evidence whenever
+          possible, including:
+
+          - file
+          - class
+          - method or function
+          - test
+          - configuration
+          - API endpoint
+          - OpenAPI definition
+          - relevant changed code
+
+          Explicitly check:
+
+          - positive cases
+          - negative cases
+          - boundary conditions
+          - error handling
+          - missing tests
+          - incorrect tests
+          - unintended scope changes
+
+          The check must fail when:
+
+          - at least one acceptance criterion is FAIL
+          - an acceptance criterion is only PARTIAL where the requirement
+            clearly requires complete implementation
+          - no Jira issue could be retrieved
+          - the linked Jira issue is not from project LAKWYC
+
+          When information is genuinely unavailable, report it as
+          NOT VERIFIABLE instead of inventing evidence.
+
+          In the explanation, always print the Jira issue key and a
+          checklist/table containing every acceptance criterion,
+          its status and concrete evidence.
+
+          Example output:
+
+          Jira issue: LAKWYC-201
+
+          | Acceptance criterion | Status | Evidence |
+          |---|---|---|
+          | Statistics are correct per game | PASS | PlayerStatisticsService, PlayerStatisticsServiceTest |
+          | Missing results are excluded | PASS | MatchStatisticsRepository |
+          | Unknown users return proper errors | PARTIAL | Validation exists, negative test missing |
+          | OpenAPI documentation updated | FAIL | No matching OpenAPI change found |
+
+      - name: "Jira Issue Required"
+        mode: "error"
+        instructions: |
+          Verify that this pull request is explicitly linked to a Jira
+          issue from project LAKWYC.
+
+          A valid issue key matches:
+
+          LAKWYC-[0-9]+
+
+          Prefer a full Jira issue URL in the pull request description.
+
+          Fail this check if no LAKWYC Jira issue is linked.
+
+          Do not guess or construct an issue key.
+
+          Include the detected Jira issue key in the explanation.
+
+      - name: "Requirement Evidence"
+        mode: "warning"
+        instructions: |
+          Review whether the pull request contains sufficient automated
+          test evidence for the requirements of the linked Jira issue.
+
+          Compare the Jira requirements and acceptance criteria against
+          the changed tests and relevant existing tests.
+
+          Flag:
+
+          - acceptance criteria without test coverage
+          - missing negative tests
+          - missing boundary tests
+          - tests that do not actually prove the requirement
+          - tests that only exercise implementation details
+          - error cases required by Jira but not tested
+
+          Do not require a one-to-one mapping between acceptance criteria
+          and test methods when existing tests clearly provide equivalent
+          coverage.
+
+  path_instructions:
+    - path: "**/*Test*"
+      instructions: |
+        When reviewing tests, relate them to the requirements of the linked
+        Jira issue when possible.
+
+        Check whether tests prove observable behavior rather than only
+        implementation details.
+
+        Pay particular attention to:
+        - boundary cases
+        - negative cases
+        - error handling
+        - empty-state behavior
+
+    - path: "**/*openapi*"
+      instructions: |
+        Verify that API changes required by the linked Jira issue are
+        reflected correctly in the OpenAPI specification.
+
+        Check endpoints, parameters, response schemas, error responses
+        and authentication/security definitions.
+
+    - path: "**/*.yaml"
+      instructions: |
+        For API or application configuration changes, check consistency
+        with the requirements of the linked Jira issue.
