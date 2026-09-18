@@ -1,8 +1,5 @@
 package com.gepardec.adapter.output.persistence.repository;
 
-import com.gepardec.adapter.output.persistence.entity.GameEntity;
-import com.gepardec.adapter.output.persistence.entity.MatchEntity;
-import com.gepardec.adapter.output.persistence.entity.UserEntity;
 import com.gepardec.core.repository.GameRepository;
 import com.gepardec.core.repository.MatchRepository;
 import com.gepardec.core.repository.UserRepository;
@@ -11,20 +8,23 @@ import com.gepardec.model.Match;
 import com.gepardec.model.User;
 import jakarta.data.page.PageRequest;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
-import org.jboss.arquillian.junit5.ArquillianExtension;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Optional;
 
 import static com.gepardec.TestFixtures.*;
 
-@ExtendWith(ArquillianExtension.class)
-public class MatchRepositoryTest extends GamertrackDbIT {
+@io.quarkus.test.junit.QuarkusTest
+public class MatchRepositoryTest  {
+
+    @Inject
+    EntityManager entityManager;
 
   @Inject
   private MatchRepository matchRepository;
@@ -37,9 +37,11 @@ public class MatchRepositoryTest extends GamertrackDbIT {
 
 
   @BeforeEach
+  @Transactional
   public void before() throws Exception {
-    removeTableData(MatchEntity.class, GameEntity.class, UserEntity.class);
-  }
+      entityManager.createQuery("DELETE FROM MatchEntity").executeUpdate();
+      entityManager.createQuery("DELETE FROM GameEntity").executeUpdate();
+      entityManager.createQuery("DELETE FROM UserEntity").executeUpdate();  }
 
   @Test
   public void ensureSaveAndReadMatchWorks() {
@@ -56,6 +58,21 @@ public class MatchRepositoryTest extends GamertrackDbIT {
     Assertions.assertEquals(match.getGame().getName(), savedAndReadMatch.get().getGame().getName());
     Assertions.assertEquals(match.getUsers().getFirst().getFirstname(),
         savedAndReadMatch.get().getUsers().getFirst().getFirstname());
+  }
+
+  @Test
+  public void ensureDrawPlacementsArePersisted() {
+    Optional<Game> savedGame = gameRepository.saveGame(game(null));
+    List<User> users = users(1);
+    User firstUser = userRepository.saveUser(users.getFirst()).orElseThrow();
+    User secondUser = userRepository.saveUser(users.getLast()).orElseThrow();
+    Match match = match(null, savedGame.orElseThrow(), List.of(firstUser, secondUser));
+    match.setPlacements(List.of(0, 0));
+
+    Match savedMatch = matchRepository.saveMatch(match).orElseThrow();
+    Match persistedMatch = matchRepository.findMatchByToken(savedMatch.getToken()).orElseThrow();
+
+    Assertions.assertEquals(List.of(0, 0), persistedMatch.getPlacements());
   }
 
   @Test

@@ -1,31 +1,45 @@
 package com.gepardec.rest.config.filters.response;
 
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
+import io.quarkus.test.junit.TestProfile;
 import io.restassured.filter.log.LogDetail;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
 
 import static com.gepardec.rest.config.filters.response.CorsResponseFilter.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.blankOrNullString;
 import static org.hamcrest.Matchers.nullValue;
 
+@QuarkusTest
+@TestProfile(CorsResponseFilterIT.CorsTestProfile.class)
 public class CorsResponseFilterIT {
 
     private final String VALID_ORIGIN = "http://gamertrack-frontend.apps.cloudscale-lpg-2.appuio.cloud";
     private final String INVALID_ORIGIN = "http://lkadsjlksjdfgamertrack-frontend.apps.cloudscale-lpg-2.appuio.com";
 
+    // Pin the CORS regex to the origin asserted below, so the test does not
+    // depend on the ALLOWED_ORIGINS_AS_REGEX value from .env or the environment
+    public static class CorsTestProfile implements QuarkusTestProfile {
+        @Override
+        public Map<String, String> getConfigOverrides() {
+            return Map.of("allowed.origins.as.regex",
+                    "^(http|https)://gamertrack-frontend.apps.cloudscale-lpg-2.appuio.cloud");
+        }
+    }
+
     @BeforeAll
     public static void setup() {
-        reset();
-        port = 8080;
-        basePath = "gepardec-gamertrack/api/v1/games";
         enableLoggingOfRequestAndResponseIfValidationFails(LogDetail.ALL);
     }
 
-    @AfterAll
-    public static void cleanup() {
-        reset();
+    @BeforeEach
+    public void setBasePath() {
+        basePath = "/gepardec-gamertrack/api/v1/games";
     }
 
     @Test

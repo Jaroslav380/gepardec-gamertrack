@@ -12,7 +12,7 @@ import com.gepardec.model.Match;
 import com.gepardec.model.Score;
 import com.gepardec.model.User;
 import jakarta.data.page.PageRequest;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -20,9 +20,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
-@Stateless
+@ApplicationScoped
 @Transactional
 public class MatchServiceImpl implements MatchService {
 
@@ -70,7 +71,7 @@ public class MatchServiceImpl implements MatchService {
 
     @Override
     public Optional<Match> saveMatch(Match match) {
-        if (match.getUsers().size() >= 2) {
+        if (match.getUsers().size() >= 2 && hasValidPlacements(match)) {
             Optional<Game> foundGame = gameRepository.findGameByToken(match.getGame().getToken());
             List<User> foundUsers = match.getUsers().stream()
                     .map(User::getToken)
@@ -157,6 +158,7 @@ public class MatchServiceImpl implements MatchService {
 
         if (!foundUsers.isEmpty()
                 && foundUsers.size() == match.getUsers().size()
+                && hasValidPlacements(match)
                 && foundGame.isPresent()
                 && foundMatch.isPresent()) {
 
@@ -189,5 +191,11 @@ public class MatchServiceImpl implements MatchService {
                         .map(gt -> matchRepository
                                 .countMatchesFilteredAndUnfiltered(gt, null))
                         .orElse(matchRepository.countMatchesFilteredAndUnfiltered(null, null)));
+    }
+
+    private static boolean hasValidPlacements(Match match) {
+        return match.getPlacements() != null
+                && match.getPlacements().size() == match.getUsers().size()
+                && match.getPlacements().stream().allMatch(Objects::nonNull);
     }
 }
