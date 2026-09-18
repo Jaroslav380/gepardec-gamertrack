@@ -4,92 +4,48 @@ tone_instructions: >
   Antworte sehr kurz und präzise. Keine langen Erklärungen.
   Konzentriere dich auf relevante Findings und die Jira-Akzeptanzkriterien.
 
+
 reviews:
-  # Nur wichtige Findings melden.
-  profile: "quiet"
-
-  # Review-Ausgabe möglichst klein halten.
-  high_level_summary: false
-  changed_files_summary: false
-  sequence_diagrams: false
-  estimate_code_review_effort: false
-  suggested_labels: false
-  suggested_reviewers: false
-  related_issues: false
-  related_prs: false
-
-  # Hilfreich beim Testen:
-  # zeigt zusätzlichen verwendeten Kontext an.
-  review_details: true
-
-  # Kein klassischer Linked-Issue-Check nötig,
-  # da LAKWYC-123 nur als String im PR steht.
-  assess_linked_issues: false
-
-  auto_review:
-    enabled: true
-    auto_incremental_review: true
-    drafts: false
-
   pre_merge_checks:
     custom_checks:
       - name: "Jira Acceptance Criteria"
         mode: "warning"
         instructions: |
-          Search the pull request title and description for a Jira issue key
-          matching exactly this pattern:
+          Find a Jira issue key in the PR title or description matching:
 
           LAKWYC-[0-9]+
 
-          Example:
-          LAKWYC-123
+          If no matching issue key exists:
+          PASS.
 
-          If no LAKWYC issue key exists:
-          PASS immediately.
-          Do not perform any Jira or functional analysis.
+          If a matching issue key exists:
 
-          If a LAKWYC issue key exists:
-
-          Use the configured MCP server to retrieve the Jira issue.
+          You MUST use the configured MCP server to retrieve the Jira ticket.
 
           Jira context:
-          - Jira space: "LF - AI knows what you've committed"
-          - Jira project: "LAKWYC"
-          - Issue key format: LAKWYC-[number]
+          - Space: "LF - AI knows what you've committed"
+          - Project: "LAKWYC"
 
-          IMPORTANT:
-          - The MCP server MUST be used to retrieve the ticket.
-          - Do not infer ticket content from the PR title.
-          - Do not infer ticket content from the PR description.
-          - Do not infer acceptance criteria from branch names,
-            commit messages or source code.
-          - Do not fabricate missing Jira information.
+          Do not infer ticket content from the PR itself.
 
-          Retrieve at minimum:
-          - issue key
-          - summary
-          - description
-          - acceptance criteria
+          If MCP retrieval succeeds, output exactly:
 
-          Compare every acceptance criterion with the implementation
-          contained in this pull request.
+          MCP Jira lookup: SUCCESS
 
-          Evaluate both:
-          - technical correctness
-          - functional/business correctness
+          Then print:
 
-          For each acceptance criterion classify it as:
+          Jira: <issue-key>
 
-          PASS    = clearly implemented
-          PARTIAL = partially implemented
-          FAIL    = not implemented or incorrectly implemented
-          UNKNOWN = cannot be verified from this pull request
+          Acceptance Criteria:
+          - [x] <criterion> — implemented
+          - [~] <criterion> — partially implemented
+          - [ ] <criterion> — not implemented
+          - [?] <criterion> — cannot be verified
 
-          PASS the check only if every acceptance criterion is PASS.
+          If MCP retrieval fails, output exactly:
 
-          If the Jira ticket cannot be retrieved through MCP:
-          do NOT perform an extended review.
-          Return a short warning indicating that MCP/Jira context
-          was unavailable.
+          MCP Jira lookup: FAILED
 
-          Keep the complete result concise.
+          Then stop. Do not perform a long review.
+
+          PASS only if all acceptance criteria are [x].
