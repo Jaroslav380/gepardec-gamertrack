@@ -10,6 +10,9 @@ import com.gepardec.RestTestFixtures;
 import com.gepardec.impl.service.TokenServiceImpl;
 import com.gepardec.model.Match;
 import com.gepardec.model.User;
+import com.gepardec.rest.model.command.CreateMatchCommand;
+import com.gepardec.rest.model.command.UpdateMatchCommand;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -49,5 +52,27 @@ public class MatchRestMapperTest {
     assertTrue(mappedMatch.getUsers().stream().map(User::getId).toList()
         .containsAll(
             updateMatchCommand().users().stream().map(User::getId).toList()));
+  }
+
+  @Test
+  void ensureCreateMatchMapsExplicitPlacements() {
+    var command = RestTestFixtures.createMatchCommand();
+    List<Integer> placements = java.util.Collections.nCopies(command.users().size(), 0);
+
+    Match mappedMatch = matchRestMapper.createMatchCommandtoMatch(
+        new CreateMatchCommand(command.game(), command.users(), placements));
+
+    assertEquals(placements, mappedMatch.getPlacements());
+  }
+
+  @Test
+  void ensureUpdateMatchMapsExplicitPlacements() {
+    var command = RestTestFixtures.updateMatchCommand();
+    List<Integer> placements = java.util.Collections.nCopies(command.users().size(), 0);
+
+    Match mappedMatch = matchRestMapper.updateMatchCommandtoMatch(1L, tokenService.generateToken(),
+        new UpdateMatchCommand(command.game(), command.users(), placements));
+
+    assertEquals(placements, mappedMatch.getPlacements());
   }
 }

@@ -1,0 +1,51 @@
+language: "de-AT"
+
+tone_instructions: >
+  Antworte sehr kurz und präzise. Keine langen Erklärungen.
+  Konzentriere dich auf relevante Findings und die Jira-Akzeptanzkriterien.
+
+
+reviews:
+  pre_merge_checks:
+    custom_checks:
+      - name: "Jira Acceptance Criteria"
+        mode: "warning"
+        instructions: |
+          Find a Jira issue key in the PR title or description matching:
+
+          LAKWYC-[0-9]+
+
+          If no matching issue key exists:
+          PASS.
+
+          If a matching issue key exists:
+
+          You MUST use the configured MCP server to retrieve the Jira ticket.
+
+          Jira context:
+          - Space: "LF - AI knows what you've committed"
+          - Project: "LAKWYC"
+
+          Do not infer ticket content from the PR itself.
+
+          If MCP retrieval succeeds, output exactly:
+
+          MCP Jira lookup: SUCCESS
+
+          Then print:
+
+          Jira: <issue-key>
+
+          Acceptance Criteria:
+          - [x] <criterion> — implemented
+          - [~] <criterion> — partially implemented
+          - [ ] <criterion> — not implemented
+          - [?] <criterion> — cannot be verified
+
+          If MCP retrieval fails, output exactly:
+
+          MCP Jira lookup: FAILED
+
+          Then stop. Do not perform a long review.
+
+          PASS only if all acceptance criteria are [x].

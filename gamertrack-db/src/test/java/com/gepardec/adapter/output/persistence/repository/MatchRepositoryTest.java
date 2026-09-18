@@ -61,6 +61,21 @@ public class MatchRepositoryTest  {
   }
 
   @Test
+  public void ensureDrawPlacementsArePersisted() {
+    Optional<Game> savedGame = gameRepository.saveGame(game(null));
+    List<User> users = users(1);
+    User firstUser = userRepository.saveUser(users.getFirst()).orElseThrow();
+    User secondUser = userRepository.saveUser(users.getLast()).orElseThrow();
+    Match match = match(null, savedGame.orElseThrow(), List.of(firstUser, secondUser));
+    match.setPlacements(List.of(0, 0));
+
+    Match savedMatch = matchRepository.saveMatch(match).orElseThrow();
+    Match persistedMatch = matchRepository.findMatchByToken(savedMatch.getToken()).orElseThrow();
+
+    Assertions.assertEquals(List.of(0, 0), persistedMatch.getPlacements());
+  }
+
+  @Test
   public void ensureSavingMatchWithInvalidReferencesFails() {
     Match match = match(null, game(2L), List.of(user(2L)));
 
